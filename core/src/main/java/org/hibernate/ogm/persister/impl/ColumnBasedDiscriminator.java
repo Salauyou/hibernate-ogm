@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import java.lang.invoke.MethodHandles;
+import org.hibernate.MappingException;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -19,7 +21,6 @@ import org.hibernate.mapping.PersistentClass;
 import org.hibernate.mapping.Subclass;
 import org.hibernate.ogm.util.impl.Log;
 import org.hibernate.ogm.util.impl.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 import org.hibernate.sql.InFragment;
 import org.hibernate.type.DiscriminatorType;
 import org.hibernate.type.StringType;
@@ -133,7 +134,14 @@ class ColumnBasedDiscriminator implements EntityDiscriminator {
 
 	@Override
 	public String provideClassByValue(Object value) {
-		return subclassesByValue.get( value );
+		String result = subclassesByValue.get( value );
+		if ( result == null ) {
+			result = subclassesByValue.get( NOT_NULL_DISCRIMINATOR );
+		}
+		if ( result == null ) {
+			throw new MappingException( "Unknown discriminator value '" + value + "'" );
+		}
+		return result;
 	}
 
 	@Override
